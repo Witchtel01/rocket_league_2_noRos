@@ -219,7 +219,7 @@ class Ball:
 
         self.body.apply_impulse_at_local_point(impulse)
     
-    def decelerate(self):
+    def decelerate(self) -> None:
         """Gradually reduces the velocity of the ball to simulate friction."""
         self.body.velocity = (self.body.velocity.length - BALL_DECELERATION) * self.body.velocity.normalized()
     
@@ -289,15 +289,15 @@ class Game:
                 self.leftscore += 1
             self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         """Resets field by removing ball and car objects from the field, then calling self.addObjects()"""
         for c in self.cars:
             self.gameSpace.remove(c.body, c.shape)
         self.cars = []
         self.gameSpace.remove(self.ball.body, self.ball.shape)
-        self.addObjects()
+        self.addDefaultObjects()
 
-    def addObjects(self):
+    def addDefaultObjects(self) -> None:
         """Adds new ball and car objects to the field according to the contents of self.carStartList"""
         self.ball = Ball(self.ballPosition[0], self.ballPosition[1], self.gameSpace)
         for i, c in enumerate(self.carStartList): #loops through list of start cars, creates new car object for each car listed
@@ -328,29 +328,7 @@ class Game:
         if walls:
             self.checkGoal(GOAL_DEPTH, FIELD_WIDTH, SIDE_WALL, SIDE_WALL + GOAL_HEIGHT)
 
-    def handleInputs(self, msg):
-        for i in msg.data:
-            self.inputs[i.id] = [i.x, i.y]
-
-    def broadcast(self):
-        msg = Field()
-        msg.data.ball_pose.id = -1
-        msg.data.ball_pose.x = self.ball.getPos().x
-        msg.data.ball_pose.y = self.ball.getPos().y
-        msg.data.ball_pose.angle_degrees = 0
-        for i, c in enumerate(self.cars):
-            tempPos = Pose()
-            tempPos.id = i
-            tempPos.x = c.getPos().x
-            tempPos.y = c.getPos().y
-            tempPos.angle_degrees = c.getAngle()
-            if c.team:
-                msg.data.team1_poses.append(tempPos)
-            else:
-                msg.data.team2_poses.append(tempPos)
-        self.publisher.publish(msg)
-
-    def run(self, visualizer:bool=False, walls:bool=False, useKeys:bool=False):
+    def run(self, visualizer:bool=False, walls:bool=False, useKeys:bool=False) -> None:
         """Main logic function to keep track of gamestate. Takes input from ros messages
         :param visualizer: Toggles rendering of the simulation. Significantly reduces sim performance when rendered for remote client
         :type visualizer: bool
@@ -359,11 +337,7 @@ class Game:
         :param useKeys: Toggles between usage of keyboard inputs or ros messages
         :type useKeys: bool
         """
-        self.addObjects()
-        rclpy.init()
-        self.node = rclpy.create_node("sim_data")
-        self.node.create_subscription(CarAction, "CarAction", lambda msg: self.handleInputs(msg), 10)
-        self.pubisher = self.node.create_publisher(Field, 'FieldState', 10)
+        self.addDefaultObjects()
         
         # Walls in Field
         if walls:
@@ -398,7 +372,6 @@ class Game:
 
             # User input
             self.updateObjects(walls, useKeys)
-            self.broadcast()
 
             # # Logic
             # for c in self.cars:
@@ -420,8 +393,6 @@ class Game:
             self.gameSpace.step(self.dt)
             self.clock.tick(self.ticks)
         pygame.quit()
-        self.node.destroy_node()
-        rclpy.shutdown()
 
     def stepRun(self, steps:int=10):
         """Main logic function to keep track of gamestate. Steps 0.1 seconds with each SPACE key press.
@@ -455,6 +426,3 @@ if __name__ == '__main__':
     game = Game()
     game.run(walls=True, useKeys=True, visualizer=True)
     #game.stepRun()
-def main():
-    game = Game()
-    game.run(walls=True, useKeys=True, visualizer=True)
