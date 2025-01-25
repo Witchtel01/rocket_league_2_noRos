@@ -1,13 +1,10 @@
-from typing import Literal, get_args
-
-
 class Message:
     class InvalidEventTypeError(Exception):
         def __init__(self, event_type, valid_event_types):
             super().__init__(f"Invalid event type: '{event_type}'.\
                 Valid Event Types are: {', '.join(valid_event_types)}")
     
-    MESSAGE_TYPES = Literal[
+    MESSAGE_TYPES = [
         # Universal exit message:
         'exit',
         # Update position (perception):
