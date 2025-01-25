@@ -12,7 +12,17 @@ def main():
     """
     qInAI = Queue()
     qOutAI = Queue()
+    
+    # TODO: Update AI initialization once AI has been fully implemented
+    ai = AITesting(None, None, qInAI, qOutAI)
+    
     # g.run(visualizer=True, walls=True, useKeys=True)
-    gameThread = threading.Thread(target=g.run)
+    gameThread = threading.Thread(target=g.runWithQueue, args = (qOutAI, qInAI, True))
+    aiThread = threading.Thread(target=ai.run, args = ())
+    
     gameThread.start()
+    aiThread.start()
+    
+    gameThread.join()
+    aiThread.join()
     

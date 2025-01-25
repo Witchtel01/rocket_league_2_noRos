@@ -3,6 +3,7 @@ from math import cos, radians, sin, degrees
 import pygame
 import pymunk
 import pymunk.pygame_util
+from event import Message
 
 from queue import Queue
 
@@ -65,7 +66,6 @@ class Car:
         self.body = pymunk.Body(CAR_MASS, pymunk.moment_for_box(CAR_MASS, CAR_SIZE))
         self.body.position = (x, y)
         self.body.angle = radians(angle)
-
         self.shape = pymunk.Poly.create_box(self.body, CAR_SIZE)
         if (team):
             self.shape.color = CAR_COLOR
@@ -203,7 +203,7 @@ class Ball:
         x:float,
         y:float,
         space:pymunk.Space,
-        impulse:pymunk.Vec2d=pymunk.Vec2d(0,0)
+        impulse:pymunk.Vec2d = pymunk.Vec2d(0,0)
     ):
         """Constructor method"""
         self.inertia = pymunk.moment_for_circle(BALL_MASS, 0, BALL_RADIUS)
@@ -373,7 +373,8 @@ class Game:
 
             # User input
             self.updateObjects(walls, useKeys)
-
+            
+            # TODO: Ask what this was supposed to be:
             # # Logic
             # for c in self.cars:
             #     c.update(self.inputs)
@@ -395,7 +396,7 @@ class Game:
             self.clock.tick(self.ticks)
         pygame.quit()
 
-    def stepRun(self, steps:int=10):
+    def stepRun(self, steps: int = 10):
         """Main logic function to keep track of gamestate. Steps 0.1 seconds with each SPACE key press.
         :param steps: Number of steps taken per 0.1 seconds when SPACE key is pressed
         :type steps: int
@@ -421,7 +422,17 @@ class Game:
                     pygame.display.update()
                     self.gameSpace.step(0.1/steps)
             pygame.time.wait(100)
-    def runWithQueue(self, inQueue: Queue, outQueue: Queue, walls: bool):
+    def runWithQueue(self, inQueue: Queue, outQueue: Queue, walls: bool = True):
+        """Runs using Queue objects to handle events and controls.
+        Currently only supports AI control of one car.
+
+        :param inQueue: The queue that takes message in
+        :type inQueue: Queue
+        :param outQueue: The queue that sends messages out
+        :type outQueue: Queue
+        :param walls: If walls should be generated
+        :type walls: bool
+        """
         self.addDefaultObjects()
         if walls:
             self.static_lines = [
@@ -446,17 +457,44 @@ class Game:
             self.gameSpace.add(*self.static_lines)
         
         while True:
+            # TODO: Check this
             self.dt = self.clock.get_time() / 1000
-            for data in inQueue.get():
-                if data.getType() == 'exit':
+            
+            for message in inQueue.get():
+                mType = message.getType()
+                mData = message.getData()
+                
+                if mType == 'exit':
+                    outQueue.put_nowait(Message("exit", None))
                     print("Simulator was instructed to exit, shutting down...")
                     break
-                if data.getType() == 'ballPosition':
-                    self.ballPosition
+                elif mType == 'ballPosition':
+                    self.ball.body.position = (mData.get('x'), mData.get('y'))
+                elif mType == 'carPosition':
+                    self.cars[0].body.position = (mData.get('x'), mData.get('y'))
+                elif mType == 'controlAction':
+                    self.cars[0].update(mData.get('throttle'), mData.get('steer'))
             
             self.updateObjects(True, False)
+            # TODO: also check this
             self.gameSpace.step(self.dt)
+            
+            # Prepare to send a message back
+            outDict = {
+                "carPositions": [_.body.getPos() for _ in self.cars],
+                "carVelocities": [_.body.getVelocity() for _ in self.cars],
+                "carAngles": [_.body.getAngle() for _ in self.cars],
+                "ballPosition": self.ball.getPos(),
+                "ballVelocity": self.ball.getVelocity(),
+                "dt": self.dt,
+                "time": self.clock.get_time(),
+                "walls": walls
+            }
+            outQueue.put_nowait(Message("simFieldState", outDict))
+            
+            # TODO: Tick after sending the message or before?
             self.clock.tick(self.ticks)
+            
             
             
 

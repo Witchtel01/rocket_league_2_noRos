@@ -8,13 +8,17 @@ class Message:
                 Valid Event Types are: {', '.join(valid_event_types)}")
     
     MESSAGE_TYPES = Literal[
+        # Universal exit message:
         'exit',
+        # Update position (perception):
         'ballPosition',
         'carPosition'
+        # AI Control action:
         'controlAction',
-        'fieldState'
+        # Field state from simulator
+        'simFieldState'
     ]
-    def __init__(self, messageType: str, messageData: dict):
+    def __init__(self, messageType: str, messageData: dict = None):
         if messageType in self.MESSAGE_TYPES:
             self.messageType = messageType
             self.messageData = messageData

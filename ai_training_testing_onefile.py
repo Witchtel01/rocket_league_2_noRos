@@ -40,6 +40,7 @@ class AITesting():
         while True:
             data = self.inQueue.get()
             if data.getType() == 'exit':
+                self.outQueue.put(Message("exit", None))
                 break
             if data.getType() == 'fieldState':
                 action, _state = self.model.predict(data.getData())
@@ -47,12 +48,12 @@ class AITesting():
                 Should use this formatting if possible:
                 {
                     "throttle": THROTTLE VALUE FROM -1 TO 1,
-                    "angle": STEERING VALUE FROM -1 TO 1
+                    "steer": STEERING VALUE FROM -1 TO 1
                 }
                 """
                 self.outQueue.put(Message('controlAction', action))
             
-            # TODO: Should data be put back into the queue? I'm not sure.
+            # TODO: Should data be put back into the queue? I'm not sure, but I doubt it.
             else:
                 self.inQueue.put(data)
 
