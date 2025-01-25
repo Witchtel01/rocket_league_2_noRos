@@ -4,6 +4,7 @@ import numpy as np
 import gymnasium as gym
 import math
 from gymnasium import spaces
+import pygame
 
 class TouchBallNoPhysicsEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 24}

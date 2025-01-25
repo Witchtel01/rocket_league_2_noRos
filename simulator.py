@@ -4,6 +4,7 @@ import pygame
 import pymunk
 import pymunk.pygame_util
 
+from queue import Queue
 
 #Field Specs
 FIELD_WIDTH = 426.72
@@ -311,7 +312,7 @@ class Game:
         """Updates controls for all objects currently on the field. Also decelerates the ball.
         :param walls: Indicates whether field walls are enabled. Does not calculate goals if false.
         :type walls: bool
-        :param useKeys: Toggles usage of keyboard inputs for calculations (true), or ros messages (false)
+        :param useKeys: Toggles usage of keyboard inputs for calculations (true), or Messages (false)
         :type useKeys: bool
         """
         if useKeys:
@@ -420,6 +421,44 @@ class Game:
                     pygame.display.update()
                     self.gameSpace.step(0.1/steps)
             pygame.time.wait(100)
+    def runWithQueue(self, inQueue: Queue, outQueue: Queue, walls: bool):
+        self.addDefaultObjects()
+        if walls:
+            self.static_lines = [
+                pymunk.Segment(self.gameSpace.static_body, (GOAL_DEPTH, 0.0), (FIELD_WIDTH, 0.0), 0.0),
+                pymunk.Segment(self.gameSpace.static_body, (FIELD_WIDTH, FIELD_HEIGHT), (GOAL_DEPTH, FIELD_HEIGHT), 0.0),
+
+                pymunk.Segment(self.gameSpace.static_body, (FIELD_WIDTH, 0.0), (FIELD_WIDTH, SIDE_WALL), 0.0),
+                pymunk.Segment(self.gameSpace.static_body, (FIELD_WIDTH, SIDE_WALL), (FIELD_WIDTH + GOAL_DEPTH, SIDE_WALL), 0.0),
+                pymunk.Segment(self.gameSpace.static_body, (FIELD_WIDTH + GOAL_DEPTH, SIDE_WALL), (FIELD_WIDTH + GOAL_DEPTH, GOAL_HEIGHT + SIDE_WALL), 0.0),
+                pymunk.Segment(self.gameSpace.static_body, (FIELD_WIDTH, GOAL_HEIGHT + SIDE_WALL), (FIELD_WIDTH + GOAL_DEPTH, SIDE_WALL + GOAL_HEIGHT), 0.0),
+                pymunk.Segment(self.gameSpace.static_body, (FIELD_WIDTH, GOAL_HEIGHT + SIDE_WALL), (FIELD_WIDTH, FIELD_HEIGHT), 0.0),
+
+                pymunk.Segment(self.gameSpace.static_body, (GOAL_DEPTH, SIDE_WALL), (GOAL_DEPTH, 0.0), 0.0),
+                pymunk.Segment(self.gameSpace.static_body, (GOAL_DEPTH, SIDE_WALL), (0, SIDE_WALL), 0.0),
+                pymunk.Segment(self.gameSpace.static_body, (0, SIDE_WALL), (0, GOAL_HEIGHT + SIDE_WALL), 0.0),
+                pymunk.Segment(self.gameSpace.static_body, (GOAL_DEPTH, GOAL_HEIGHT + SIDE_WALL), (0, SIDE_WALL + GOAL_HEIGHT), 0.0),
+                pymunk.Segment(self.gameSpace.static_body, (GOAL_DEPTH, GOAL_HEIGHT + SIDE_WALL), (GOAL_DEPTH, FIELD_HEIGHT), 0.0),
+            ]
+            for l in self.static_lines:
+                l.friction = FIELD_FRICTION
+                l.elasticity = FIELD_ELASTICITY
+            self.gameSpace.add(*self.static_lines)
+        
+        while True:
+            self.dt = self.clock.get_time() / 1000
+            for data in inQueue.get():
+                if data.getType() == 'exit':
+                    print("Simulator was instructed to exit, shutting down...")
+                    break
+                if data.getType() == 'ballPosition':
+                    self.ballPosition
+            
+            self.updateObjects(True, False)
+            self.gameSpace.step(self.dt)
+            self.clock.tick(self.ticks)
+            
+            
 
 if __name__ == '__main__':
     #game = Game(carStartList=[[(FIELD_WIDTH + GOAL_DEPTH) / 3,FIELD_HEIGHT / 2]])
