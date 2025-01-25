@@ -464,16 +464,31 @@ class Game:
                 mType = message.getType()
                 mData = message.getData()
                 
-                if mType == 'exit':
-                    outQueue.put_nowait(Message("exit", None))
-                    print("Simulator was instructed to exit, shutting down...")
-                    break
-                elif mType == 'ballPosition':
-                    self.ball.body.position = (mData.get('x'), mData.get('y'))
-                elif mType == 'carPosition':
-                    self.cars[0].body.position = (mData.get('x'), mData.get('y'))
-                elif mType == 'controlAction':
-                    self.cars[0].update(mData.get('throttle'), mData.get('steer'))
+                match mType:    
+                    case 'exit':
+                        outQueue.put_nowait(Message("exit", None))
+                        print("Simulator was instructed to exit, shutting down...")
+                        break
+                    
+                    case 'ballPosition':
+                        self.ball.body.position = (mData.get('x'), mData.get('y'))
+                
+                    case 'carPosition':
+                        self.cars[0].body.position = (mData.get('x'), mData.get('y'))
+                
+                    case 'carPositionIndexed':
+                        self.cars[mData.get("index")].body.position = (mData.get('x'), mData.get('y'))
+                
+                    case 'carPositions':
+                        for i, car in enumerate(self.cars):
+                            self.cars[i].body.position = mData.get("positions")[i]
+                    
+                    case 'controlAction':
+                        self.cars[0].update(mData.get('throttle'), mData.get('steer'))
+                    
+                    case 'controlActionIndexed':
+                        self.cars[mData.get("index")].update(mData.get('throttle'), mData.get('steer'))
+            
             
             self.updateObjects(True, False)
             # TODO: also check this

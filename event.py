@@ -9,9 +9,13 @@ class Message:
         'exit',
         # Update position (perception):
         'ballPosition',
-        'carPosition'
+        'carPosition',
+        'carPositionIndexed',
+        # To handle multiple cars and positions being updated:
+        'carPositions',
         # AI Control action:
         'controlAction',
+        'controlActionIndexed',
         # Field state from simulator
         'simFieldState'
     ]
