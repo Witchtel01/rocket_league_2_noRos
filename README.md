@@ -7,7 +7,7 @@
 - `simulator.py`
 - `TouchBall1.py (not updated)`
 ## Event.py:
-Contains `Message Class`
+Contains `Message` Class
 A Message consists of a message type (string) and message data (dict)
 `Message.MESSAGE_TYPES` is a list of valid types
 ## Simulator.py
